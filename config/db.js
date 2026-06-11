@@ -1,21 +1,23 @@
-import mysql from 'mysql2/promise';
+import mysql from "mysql2/promise";
 
 const pool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT) || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASS || '',
-    database: process.env.DB_NAME || 'github_analyzer',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
+  host: process.env.DB_HOST || "localhost",
+  port: parseInt(process.env.DB_PORT) || 3306,
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASS || "",
+  database: process.env.DB_NAME || "github_analyzer",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  ssl:
+    process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : undefined,
 });
 
 // Initialize tables
 async function initDB() {
-    const conn = await pool.getConnection();
-    try {
-        await conn.query(`
+  const conn = await pool.getConnection();
+  try {
+    await conn.query(`
             CREATE TABLE IF NOT EXISTS profiles (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(255) NOT NULL UNIQUE,
@@ -42,7 +44,7 @@ async function initDB() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         `);
-        await conn.query(`
+    await conn.query(`
             CREATE TABLE IF NOT EXISTS profile_languages (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 profile_id INT NOT NULL,
@@ -51,10 +53,10 @@ async function initDB() {
                 FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         `);
-        console.log('✅ Database tables ready');
-    } finally {
-        conn.release();
-    }
+    console.log("✅ Database tables ready");
+  } finally {
+    conn.release();
+  }
 }
 
 export { pool, initDB };
