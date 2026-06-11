@@ -1,184 +1,372 @@
-# GitHub Profile Analyzer API
+<div align="center">
 
-A backend service that analyzes GitHub user profiles using the GitHub public API and stores useful insights in a MySQL database.
+# 🔍 GitHub Profile Analyzer API
 
-## Tech Stack
+*A backend service that fetches public GitHub profiles, computes insights, and stores them in MySQL.*
 
-- **Node.js** + **Express.js**
-- **MySQL** (with mysql2 driver)
-- **GitHub REST API** (third-party)
+**[🌐 Live API](https://github-profile-analyzer-lxxy.onrender.com)** &nbsp;·&nbsp; **[📦 Repository](#)** &nbsp;·&nbsp; **[📄 Postman Collection](#)**
 
-## Features
+![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js)
+![Express](https://img.shields.io/badge/Express.js-5.x-000000?logo=express)
+![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql)
+![License](https://img.shields.io/badge/License-ISC-blue.svg)
+![Deploy](https://img.shields.io/badge/Deploy-Render-46E3B7?logo=render)
 
-- 🔍 Fetch and analyze any GitHub user's public profile
-- 💾 Store profile insights in MySQL (repos, followers, gists, stars, languages, etc.)
-- 📋 List all previously analyzed profiles with pagination
-- 👤 Get detailed analysis of a single profile
-- 🕐 Track last analyzed timestamp
-- 📊 Aggregate stats: total stars, total forks, top languages, account age
-- 🔄 Re-fetch: calling the analyze endpoint for an existing user updates their data
-- 🚦 GitHub API rate-limit aware with graceful error handling
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/analyze/:username` | Analyze & store a GitHub profile |
-| `GET` | `/api/profiles` | List all stored analyzed profiles (paginated) |
-| `GET` | `/api/profiles/:username` | Get single profile with language breakdown |
-
-## Database Schema
-
-See `schema.sql`.
-
-## Quick Start (Local)
-
-### 1. Clone & install
-
-```bash
-git clone <your-repo-url>
-cd github-profile-analyzer
-npm install
-```
-
-### 2. Configure environment
-
-```bash
-cp .env.example .env
-# Edit .env with your MySQL credentials
-```
-
-### 3. Create database
-
-```bash
-mysql -u root -p < schema.sql
-```
-
-### 4. Run
-
-```bash
-npm start
-```
-
-The server starts on `http://localhost:3000`.
+</div>
 
 ---
 
-## 🚀 Deploy to Render (Free Tier)
+## 📋 Assignment Checklist
 
-Render lets you host both the Node.js API and a MySQL database for free.  
-**Estimated time: 10–15 minutes.**
+| Requirement | Status |
+|---|---|
+| 1. Fetch public profile data from GitHub using username | ✅ |
+| 2. Store useful insights in MySQL | ✅ |
+| 3. Store analysis results in MySQL | ✅ |
+| 4. API to fetch all stored analyzed profile list | ✅ |
+| 5. API to fetch data of a single profile | ✅ |
 
-### Step 1: Push your code to GitHub
+---
 
-Make sure your project is in a public (or private) GitHub repository:
+## 🚀 Live Demo
+
+**Base URL:** [`https://github-profile-analyzer-lxxy.onrender.com`](https://github-profile-analyzer-lxxy.onrender.com)
 
 ```bash
-git init
-git add .
-git commit -m "Initial commit"
+# Health check
+curl https://github-profile-analyzer-lxxy.onrender.com/
+
+# Analyze any GitHub user
+curl -X POST https://github-profile-analyzer-lxxy.onrender.com/api/analyze/octocat
+
+# Browse all analyzed profiles
+curl https://github-profile-analyzer-lxxy.onrender.com/api/profiles
+
+# View one profile in detail
+curl https://github-profile-analyzer-lxxy.onrender.com/api/profiles/octocat
+```
+
+> ⚠️ First request may take 30–60s due to Render free tier cold start. Subsequent requests are fast.
+
+---
+
+## 🧱 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Runtime | **Node.js** (ES Modules) |
+| Framework | **Express.js 5** |
+| Database | **MySQL** (via `mysql2/promise`) |
+| External API | **GitHub REST API v3** (via `axios`) |
+
+---
+
+## 📡 API Documentation
+
+### 1. Analyze & Store Profile
+
+`POST /api/analyze/:username`
+
+Fetches the user from GitHub, computes aggregate stats across all public repos, and upserts into MySQL.
+
+**Request:**
+```bash
+curl -X POST https://github-profile-analyzer-lxxy.onrender.com/api/analyze/octocat
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "username": "octocat",
+    "name": "The Octocat",
+    "bio": null,
+    "avatar_url": "https://avatars.githubusercontent.com/u/583231?v=4",
+    "html_url": "https://github.com/octocat",
+    "blog": "https://github.blog",
+    "company": "@github",
+    "location": "San Francisco",
+    "public_repos": 8,
+    "public_gists": 8,
+    "followers": 22913,
+    "following": 9,
+    "total_stars": 21534,
+    "total_forks": 164708,
+    "account_created_at": "2011-01-25 18:44:36",
+    "hireable": false,
+    "last_analyzed_at": "2026-06-11T04:49:31.000Z",
+    "top_languages": [
+      { "language": "HTML", "repo_count": 1 },
+      { "language": "Ruby", "repo_count": 1 },
+      { "language": "CSS", "repo_count": 1 }
+    ]
+  }
+}
+```
+
+**Error cases:**
+| Status | Message |
+|---|---|
+| `404` | GitHub user not found |
+| `429` | GitHub API rate limit exceeded |
+| `500` | Internal server error |
+
+---
+
+### 2. List All Profiles
+
+`GET /api/profiles`
+
+Returns paginated list of analyzed profiles, newest first.
+
+**Query params:** `page` (default 1), `limit` (default 20)
+
+```bash
+curl "https://github-profile-analyzer-lxxy.onrender.com/api/profiles?page=1&limit=5"
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "username": "octocat",
+      "name": "The Octocat",
+      "avatar_url": "https://avatars.githubusercontent.com/u/583231?v=4",
+      "public_repos": 8,
+      "followers": 22913,
+      "total_stars": 21534,
+      "last_analyzed_at": "2026-06-11T04:49:31.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 5,
+    "total": 1,
+    "pages": 1
+  }
+}
+```
+
+---
+
+### 3. Get Single Profile
+
+`GET /api/profiles/:username`
+
+Returns full profile data with language breakdown.
+
+```bash
+curl https://github-profile-analyzer-lxxy.onrender.com/api/profiles/octocat
+```
+
+**Response (200):** Same shape as `POST /api/analyze/:username` (above).
+
+**Error cases:**
+| Status | Message |
+|---|---|
+| `404` | Profile not found — run `POST /api/analyze/:username` first |
+
+---
+
+## 🧠 Insights Stored
+
+| Column | Source | Description |
+|---|---|---|
+| `username`, `name`, `bio`, `avatar_url` | GitHub User API | Profile metadata |
+| `blog`, `company`, `location`, `email`, `twitter_username` | GitHub User API | Contact & social |
+| `public_repos`, `public_gists` | GitHub User API | Repository counts |
+| `followers`, `following` | GitHub User API | Community metrics |
+| `total_stars` ⭐ | **Computed** from all repos | Aggregate star count |
+| `total_forks` 🍴 | **Computed** from all repos | Aggregate fork count |
+| `top_languages` | **Computed** from all repos | Language distribution (top 10) |
+| `account_created_at` | GitHub User API | Account age |
+| `hireable` | GitHub User API | Job-seeking flag |
+| `last_analyzed_at` | Auto-generated | Track when last analyzed |
+
+---
+
+## 📊 Database Schema
+
+```
+┌─────────────────────────────────────────┐
+│                profiles                  │
+├─────────────────────────────────────────┤
+│ id              INT (PK, AUTO_INCREMENT) │
+│ username        VARCHAR(255) UNIQUE      │
+│ name            VARCHAR(255)             │
+│ bio             TEXT                     │
+│ avatar_url      VARCHAR(500)             │
+│ html_url        VARCHAR(500)             │
+│ blog            VARCHAR(500)             │
+│ company         VARCHAR(255)             │
+│ location        VARCHAR(255)             │
+│ email           VARCHAR(255)             │
+│ twitter_username VARCHAR(255)            │
+│ public_repos    INT                      │
+│ public_gists    INT                      │
+│ followers       INT                      │
+│ following       INT                      │
+│ total_stars     INT                      │
+│ total_forks     INT                      │
+│ account_created_at DATETIME              │
+│ account_updated_at DATETIME              │
+│ hireable        TINYINT(1)               │
+│ last_analyzed_at TIMESTAMP               │
+│ created_at      TIMESTAMP                │
+│ updated_at      TIMESTAMP                │
+└───────────────┬─────────────────────────┘
+                │ 1 ──── N
+┌───────────────▼─────────────────────┐
+│          profile_languages           │
+├─────────────────────────────────────┤
+│ id            INT (PK, AUTO_INC)     │
+│ profile_id    INT (FK → profiles.id) │
+│ language      VARCHAR(100)           │
+│ repo_count    INT                    │
+└─────────────────────────────────────┘
+```
+
+Full SQL in [`schema.sql`](./schema.sql). Tables auto-create on startup — no manual migration needed.
+
+---
+
+## ⚙️ Setup (Local)
+
+### Prerequisites
+
+- **Node.js** 18+
+- **MySQL** 8+ running locally
+
+### Steps
+
+```bash
+# 1. Clone
+git clone https://github.com/YOUR_USERNAME/github-profile-analyzer.git
+cd github-profile-analyzer
+
+# 2. Install
+npm install
+
+# 3. Configure
+cp .env.example .env
+# Edit .env — set DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME
+
+# 4. Create the database (optional — tables auto-create on startup)
+mysql -u root -p < schema.sql
+
+# 5. Start
+npm start
+# 🚀 Server running on http://localhost:3000
+```
+
+### Environment Variables
+
+| Variable | Default | Required | Notes |
+|---|---|---|---|
+| `DB_HOST` | `localhost` | Yes | MySQL hostname |
+| `DB_PORT` | `3306` | Yes | MySQL port |
+| `DB_USER` | `root` | Yes | MySQL username |
+| `DB_PASS` | *(empty)* | Yes | MySQL password |
+| `DB_NAME` | `github_analyzer` | Yes | Database name |
+| `DB_SSL` | `false` | For cloud DB | Set to `true` for Aiven, PlanetScale, etc. |
+| `GH_TOKEN` | *(none)* | Optional | GitHub PAT to raise rate limit from 60 → 5000 req/hr |
+| `PORT` | `3000` | No | Server port |
+
+---
+
+## ☁️ Deployment (Render + Aiven)
+
+Render hosts the API. Since Render doesn't offer MySQL, we pair it with Aiven's free MySQL.
+
+### 1. Push to GitHub
+```bash
+git init && git add . && git commit -m "Initial commit"
 git branch -M main
 git remote add origin https://github.com/YOUR_USERNAME/github-profile-analyzer.git
 git push -u origin main
 ```
 
-### Step 2: Create a MySQL database on Render
+### 2. Create free MySQL on Aiven
+- Visit [console.aiven.io](https://console.aiven.io) → sign up
+- **Create Service** → MySQL → **Free plan** (Startup-4, 5 GB)
+- Once RUNNING → copy **Host**, **Port**, **User**, **Password**
+- Default database is `defaultdb`
 
-1. Go to [dashboard.render.com](https://dashboard.render.com) → **New** → **MySQL**
-2. Fill in:
-   - **Name**: `github-analyzer-db`
-   - **Database**: `github_analyzer`
-   - **User**: `admin` (default)
-   - **Region**: pick the one closest to you (e.g., Singapore for India)
-   - **Instance Type**: **Free**
-3. Click **Create Database**
-4. Wait for status to become **Available** (takes ~2 minutes)
-5. Scroll down and copy these values — you'll need them next:
-   - **Hostname** (e.g., `dpg-xxxxx.oregon-postgres.render.com`)
-   - **Port** (e.g., `5432` → MySQL uses `3306` on Render)
-   - **Username**
-   - **Password**
-   - **Database** (`github_analyzer`)
+### 3. Deploy API on Render
+- Visit [dashboard.render.com](https://dashboard.render.com) → **New** → **Web Service**
+- Connect your GitHub repo
+- Set **Build Command:** `npm install`, **Start Command:** `npm start`
+- Add Environment Variables with your Aiven credentials + `DB_SSL=true`
+- Click **Create Web Service**
 
-### Step 3: Create the Web Service
-
-1. Go to **New** → **Web Service**
-2. Connect your GitHub repo (`github-profile-analyzer`)
-3. Configure the service:
-   - **Name**: `github-profile-analyzer`
-   - **Region**: same as your database
-   - **Runtime**: Node
-   - **Build Command**: `npm install` (auto-detected)
-   - **Start Command**: `npm start` (auto-detected)
-   - **Instance Type**: **Free**
-4. Scroll down to **Environment Variables** and add these:
-
-   | Key | Value |
-   |-----|-------|
-   | `DB_HOST` | *paste the MySQL Hostname from Step 2* |
-   | `DB_PORT` | *paste the MySQL Port from Step 2* |
-   | `DB_USER` | *paste the MySQL Username from Step 2* |
-   | `DB_PASS` | *paste the MySQL Password from Step 2* |
-   | `DB_NAME` | `github_analyzer` |
-   | `PORT` | `10000` (Render's default — or leave unset, it auto-assigns) |
-
-5. Click **Create Web Service**
-
-### Step 4: Wait & Test
-
-- Build + deploy takes ~3–5 minutes on the free tier
-- Once done, your API will be live at: `https://github-profile-analyzer.onrender.com`
-- Test it:
+### 4. Done
+Your API is live at `https://your-service-name.onrender.com`. Test with:
 
 ```bash
-# Health check
-curl https://github-profile-analyzer.onrender.com/
-
-# Analyze a profile
-curl -X POST https://github-profile-analyzer.onrender.com/api/analyzer/torvalds
-
-# List all
-curl https://github-profile-analyzer.onrender.com/api/profiles
+curl -X POST https://your-service-name.onrender.com/api/analyze/torvalds
 ```
 
-### ⚠️ Important Notes
+---
 
-- **Cold starts**: Free Render services spin down after 15 minutes of inactivity. The first request after a cold start takes ~30–60 seconds. Use a service like [UptimeRobot](https://uptimerobot.com) or [Kaffeine](https://kaffeine.herokuapp.com/) to ping it every 5 minutes.
-- **Free MySQL expires after 90 days** — back up your data or upgrade before then.
-- **Rate limits**: GitHub API allows 60 unauthenticated requests/hour. For production, add a GitHub personal access token in a `GH_TOKEN` env var.
+## ✨ Features Beyond Requirements
 
-## Environment Variables
+| Feature | Description |
+|---|---|
+| 🔤 **Language Analysis** | Aggregates programming languages across all public repos into a `profile_languages` table |
+| ⭐ **Total Stars & Forks** | Computes cumulative star and fork counts across all repos |
+| 📄 **Pagination** | `GET /api/profiles` supports `?page=1&limit=20` with pagination metadata |
+| 🔄 **Smart Upsert** | Re-analyzing a user updates their data and refreshes languages instead of creating duplicates |
+| 🛡️ **Graceful Error Handling** | Distinct 404 (user not found), 429 (rate limited), and 500 responses with human-readable messages |
+| 🔌 **Auto Table Creation** | `initDB()` creates tables on startup — no manual `schema.sql` needed on deploy |
+| 🔒 **SSL Support** | `DB_SSL=true` env var for cloud-hosted MySQL (Aiven, PlanetScale, etc.) |
+| 🔑 **GitHub Token Support** | `GH_TOKEN` env var raises rate limits from 60 → 5000 requests per hour |
+| 📅 **ISO 8601 Date Conversion** | Handles GitHub's ISO timestamps and converts them to MySQL DATETIME format |
+| ⏱️ **Last Analyzed Timestamp** | Tracks when each profile was refreshed |
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DB_HOST` | `localhost` | MySQL host |
-| `DB_PORT` | `3306` | MySQL port |
-| `DB_USER` | `root` | MySQL user |
-| `DB_PASS` | (empty) | MySQL password |
-| `DB_NAME` | `github_analyzer` | Database name |
-| `PORT` | `3000` | Server port |
+---
 
-## Example Usage
+## 📁 Project Structure
 
-```bash
-# Analyze a profile
-curl -X POST http://localhost:3000/api/analyze/torvalds
-
-# Get all profiles (page 1, 20 per page)
-curl http://localhost:3000/api/profiles
-
-# Get all profiles (page 2, 10 per page)
-curl "http://localhost:3000/api/profiles?page=2&limit=10"
-
-# Get one profile with full details
-curl http://localhost:3000/api/profiles/torvalds
+```
+github-profile-analyzer/
+├── .env.example          # Environment variable template
+├── README.md             # You are here
+├── schema.sql            # Database DDL (reference — auto-created at runtime)
+├── package.json          # Dependencies & scripts (type: module)
+├── index.js              # Entry point — Express server
+├── config/
+│   └── db.js             # MySQL connection pool & table initialization
+├── routes/
+│   └── api.js            # All 3 API route handlers
+└── services/
+    └── github.js         # GitHub REST API client
 ```
 
-## Bonus Features Added
+---
 
-- **Repo language analysis** – aggregates language usage across all public repos
-- **Total stars & forks** – computed from all public repos
-- **Pagination** on list endpoint
-- **Upsert logic** – re-analyzing a user updates their data instead of creating duplicates
-- **Graceful error handling** for 404 (user not found) and 403 (rate limit)
-- **Auto table creation** on startup (no manual SQL needed beyond DB creation)
+## 📮 Postman Collection
+
+Coming soon — or create one by importing:
+
+```json
+{
+  "info": { "name": "GitHub Profile Analyzer" },
+  "item": [
+    { "name": "Analyze Profile", "request": { "method": "POST", "url": "{{base_url}}/api/analyze/octocat" } },
+    { "name": "List Profiles",   "request": { "method": "GET",  "url": "{{base_url}}/api/profiles" } },
+    { "name": "Get Profile",     "request": { "method": "GET",  "url": "{{base_url}}/api/profiles/octocat" } }
+  ],
+  "variable": [{ "key": "base_url", "value": "https://github-profile-analyzer-lxxy.onrender.com" }]
+}
+```
+
+Save as `postman_collection.json` and import into Postman.
+
+---
+
+<div align="center">
+Made with ☕ for the Node.js Intern assignment
+</div>

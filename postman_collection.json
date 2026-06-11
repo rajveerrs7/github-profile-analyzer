@@ -1,0 +1,74 @@
+{
+  "info": {
+    "name": "GitHub Profile Analyzer API",
+    "description": "Backend service that analyzes GitHub profiles and stores insights in MySQL.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://github-profile-analyzer-lxxy.onrender.com",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔍 Analyze Profile",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/analyze/octocat",
+          "host": ["{{base_url}}"],
+          "path": ["api", "analyze", "octocat"]
+        },
+        "description": "Fetch a GitHub user's public profile, compute insights (stars, forks, languages), and store in MySQL. Works for any public GitHub username."
+      }
+    },
+    {
+      "name": "📋 List All Profiles",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/profiles?page=1&limit=20",
+          "host": ["{{base_url}}"],
+          "path": ["api", "profiles"],
+          "query": [
+            { "key": "page", "value": "1", "description": "Page number" },
+            { "key": "limit", "value": "20", "description": "Results per page" }
+          ]
+        },
+        "description": "Get paginated list of all analyzed profiles, ordered by most recently analyzed."
+      }
+    },
+    {
+      "name": "👤 Get Single Profile",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/profiles/octocat",
+          "host": ["{{base_url}}"],
+          "path": ["api", "profiles", "octocat"]
+        },
+        "description": "Get full profile details including top languages breakdown for a specific user. Requires the profile to have been analyzed first."
+      }
+    },
+    {
+      "name": "❤️ Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": ["{{base_url}}"],
+          "path": [""]
+        },
+        "description": "Check if the API is running."
+      }
+    }
+  ]
+}
