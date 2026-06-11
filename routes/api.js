@@ -2,6 +2,14 @@ import { Router } from "express";
 import { pool } from "../config/db.js";
 import { fetchUserProfile, fetchUserRepos } from "../services/github.js";
 
+/**
+ * Convert ISO 8601 date string (e.g. "2011-01-25T18:44:36Z") to MySQL DATETIME format.
+ */
+function toMySQLDate(iso) {
+  if (!iso) return null;
+  return iso.replace("T", " ").replace("Z", "");
+}
+
 const router = Router();
 
 // ---------------------------------------------------------------
@@ -59,8 +67,8 @@ router.post("/analyze/:username", async (req, res) => {
         profile.following || 0,
         totalStars,
         totalForks,
-        profile.created_at || null,
-        profile.updated_at || null,
+        toMySQLDate(profile.created_at),
+        toMySQLDate(profile.updated_at),
         profile.hireable ? 1 : 0,
       ];
 
@@ -88,8 +96,8 @@ router.post("/analyze/:username", async (req, res) => {
                         (username, name, bio, avatar_url, html_url, blog, company,
                          location, email, twitter_username, public_repos, public_gists,
                          followers, following, total_stars, total_forks,
-                         account_created_at, account_updated_at, hireable)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                         account_created_at, account_updated_at, hireable, last_analyzed_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
           [username, ...profileData],
         );
         profileId = result.insertId;
